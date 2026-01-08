@@ -18,7 +18,7 @@ const int shotCooldDown=30;
 int frameSinceLastShot;
 const int ScoreUpCooldDown=45;
 int frameSinceScoreUp;
-int gameState=2;
+int gameState=0;
 int firstFrame=0;
 int GetFirstEmptyShot()
 {
@@ -35,6 +35,15 @@ int GetFirstEmptyShot()
 int main()
 {
     InitWindow(screenWidth,screenHeight,"Shoot in the dark");//litéralement vu qu'on voit rien
+    InitAudioDevice();
+    Music music = LoadMusicStream("ressources/Menu.wav");
+    Sound impact = LoadSound("ressources/Shotgun.wav");
+    Sound shoot = LoadSound("ressources/Tir.mp3");
+    music.looping = true;   
+    PlayMusicStream(music);
+    SetMusicVolume( music,.1);
+    SetSoundVolume(impact,.1);
+    SetSoundVolume(shoot,.1);
     Rectangle playerRect= GetBarRectangle();
     struct Bar newBar;
     newBar.posX=480;
@@ -46,10 +55,19 @@ int main()
     int  currentScore;
     while(!WindowShouldClose())
     {
+    UpdateMusicStream(music);     
     BeginDrawing();
     ClearBackground(BLACK);
         if(gameState==0)//main menu
         {
+            if(IsKeyDown(KEY_ENTER))
+            {
+                gameState=1;
+            }
+            DrawText(TextFormat("Use q ( a on qwerty) and d \n or left and right arrow to move"),100,100, 30, WHITE);
+            DrawText(TextFormat("Press Space to shoot"),100,200, 30, WHITE);
+            DrawText(TextFormat("Try to kill all enemies \n as fast as possible."),100,250, 30, WHITE);
+            DrawText(TextFormat("Press enter to play"),560,270, 30, WHITE);
         }
         else if(gameState==1)//Game
         {
@@ -88,8 +106,9 @@ int main()
                 
                 if(IsKeyDown(KEY_SPACE))
                 {
+                    PlaySound(shoot);
                     int currentShotSlot=GetFirstEmptyShot();;
-                    Shoot(&shots[currentShotSlot],newBar.posX);       
+                    Shoot(&shots[currentShotSlot],newBar.posX+32);       
                     frameSinceLastShot=0;
                 }
             }
@@ -102,6 +121,7 @@ int main()
             {
                 if(shots[i].isActive==1)
                 {
+                    
                     ShotMove(&shots[i]);
                     DrawShot(&shots[i]);
                     for(int j=0;j<maxEnemy;j++)
@@ -109,6 +129,7 @@ int main()
                       bool collision=CheckCollisionRecs(shots[i].hitbox,enemies[j].hitbox);
                       if(collision==1&&enemies[j].isActive)
                       {
+                        PlaySound(impact); 
                         ShotHit(&shots[i]);
                         LoseHP(&enemies[j]);
                         break;          
@@ -129,7 +150,6 @@ int main()
                     
                 }
             }
-            printf("%d\n",deadEnemies);
             if(deadEnemies>=sizeof(enemies)/sizeof(enemies[0]))
             {
                 SaveNewScore(currentScore);
@@ -173,6 +193,10 @@ int main()
        }
        EndDrawing(); 
     }
+    UnloadSound(shoot);
+    UnloadSound(impact);
+    UnloadMusicStream(music);
+    CloseAudioDevice();  
     CloseWindow();
     return 0;
 }

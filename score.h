@@ -3,14 +3,14 @@
 #include <Raylib.h>
 #include <stdlib.h>
 #define SCORE_DATA_FILE   "score.data"
-
+// pour cette partie je me suis servi de l'exemple core_storage_value de raylib
 bool SaveNewScore(int score)
 {
     bool success = false;
     int highScoreTab=10;
     int dataSize = 0;
     unsigned int newDataSize = 0;
-
+    int position=0;;
     unsigned char *fileData = LoadFileData(SCORE_DATA_FILE, &dataSize);
     unsigned char *newFileData = NULL;
 
@@ -23,12 +23,15 @@ bool SaveNewScore(int score)
             
             if (newFileData != NULL)
             {
-                // RL_REALLOC succeded
                 int *dataPtr = (int *)newFileData;
                 for(int i=0;i<highScoreTab;++i)
                 {
                     if(dataPtr[i]>score)
                     {
+                        for(int j=highScoreTab-1;j>i;j--)
+                        {
+                            dataPtr[j] = dataPtr[j-1] ;
+                        }
                         dataPtr[i] = score;
                         break;
                     }
@@ -59,6 +62,10 @@ bool SaveNewScore(int score)
             {
                 if(dataPtr[i]>score)
                 {
+                    for(int j=highScoreTab-1;j>i;j--)
+                        {
+                            dataPtr[j] = dataPtr[j-1] ;
+                        }
                     dataPtr[i] = score;
                     break;
                 }

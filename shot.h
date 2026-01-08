@@ -51,7 +51,7 @@ struct Shot CreateShot(int ID){
 void Shoot(struct Shot* shot,float posX){
     struct Shot newShot;
     shot->posX=posX;
-    shot->posY=425;
+    shot->posY=500;
     shot->hitbox.x=shot->posX;
     shot->hitbox.y=shot->posY;
     shot->isActive=1;
