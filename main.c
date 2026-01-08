@@ -1,19 +1,24 @@
-#include<Raylib.h>
+//#include<Raylib.h>
 #include <stddef.h>
 #include <stdio.h>
 #include "bar.h"
 #include "shot.h"
 #include "score.h"
 #include "enemy.h"
-
+//depuis que j'ai essayé d'ajouter le score le jeu crash se ferme automatiquement au endDraw() si j'utilise un draw quelconque;
 const int screenWidth = 960;
 const int screenHeight = 540;
+const int maxEnemy = 30;
+const int enemyPerLine = 10;
+const int maxShot=3;
 struct Shot shots[3]={0};
-struct Enemy enemies[5]={0};
-int score[10]={0};
-int shotCooldDown=30;
-int frameSinceLastShot=30;
-int gameState=1;
+struct Enemy enemies[30]={0};
+int scores[10]={0};
+const int shotCooldDown=30;
+int frameSinceLastShot;
+const int ScoreUpCooldDown=45;
+int frameSinceScoreUp;
+int gameState=2;
 int firstFrame=0;
 int GetFirstEmptyShot()
 {
@@ -29,41 +34,48 @@ int GetFirstEmptyShot()
     
 int main()
 {
-    InitWindow(screenWidth,screenHeight,"game");
+    InitWindow(screenWidth,screenHeight,"Shoot in the dark");//litéralement vu qu'on voit rien
     Rectangle playerRect= GetBarRectangle();
     struct Bar newBar;
     newBar.posX=480;
     Texture2D playerTex=LoadTexture("newAssetPack/Destroyed.png");
     SetTextureWrap(playerTex,2); 
-    //SaveNewScore(777);
+    //SaveNewScore(777);//test score;
     SetTargetFPS(60); 
     int deadEnemies=0;
-    for(int i=0;i<10;++i)
-    {
-        shots[i]=CreateShot(i);
-        printf("%d is active %d at %f %f \n",i,shots[i].ID,shots[i].posX,shots[i].posY);
-    }
-    for(int i=0;i<15;i++)
-    {
-        if(i%5==2)
-        {    
-            enemies[i]  =CreateEnemy(2,i,120+144*(i%5),120+120*(i/5));
-        }
-        else
-        {
-            enemies[i]=CreateEnemy(1,i,120+144*(i%5),120+120*(i/5));
-        }
-    }
+    int  currentScore;
     while(!WindowShouldClose())
     {
-        BeginDrawing();
-        ClearBackground(BLACK);
+    BeginDrawing();
+    ClearBackground(BLACK);
         if(gameState==0)//main menu
         {
         }
         else if(gameState==1)//Game
         {
-            
+            if(firstFrame==0)
+            {
+                frameSinceLastShot=shotCooldDown;
+                frameSinceScoreUp=0; 
+                currentScore=0;
+                for(int i=0;i<maxShot;++i)
+                {
+                    shots[i]=CreateShot(i);
+                }
+                for(int i=0;i<maxEnemy;i++)
+                {
+                    if(i%5==3)
+                    {    
+                        enemies[i]=CreateEnemy(2,i,120+((screenWidth-120)/enemyPerLine)*(i%enemyPerLine),120+120*(i/enemyPerLine));
+                    }
+                    else
+                    {
+                        enemies[i]=CreateEnemy(1,i,120+((screenWidth-120)/enemyPerLine)*(i%enemyPerLine),120+120*(i/enemyPerLine));
+                    }
+                }
+                firstFrame++;
+            }
+            deadEnemies=0;
             if(IsKeyDown(KEY_D)|| IsKeyDown(KEY_RIGHT))
             {
                 BarMove(1,&newBar);
@@ -85,28 +97,26 @@ int main()
             {
                 frameSinceLastShot++;
             }
-            for(int i=0;i<10;i++)
+
+            for(int i=0;i<maxShot;i++)
             {
                 if(shots[i].isActive==1)
                 {
                     ShotMove(&shots[i]);
                     DrawShot(&shots[i]);
-                    for(int j=0;j<5;j++)
+                    for(int j=0;j<maxEnemy;j++)
                     {
-                        bool collision= CheckCollisionRecs(shots[i].hitbox,enemies[j].hitbox);
-                         printf("%d\n" ,enemies[j].isActive);
+                      bool collision=CheckCollisionRecs(shots[i].hitbox,enemies[j].hitbox);
                       if(collision==1&&enemies[j].isActive)
                       {
-
                         ShotHit(&shots[i]);
                         LoseHP(&enemies[j]);
-                        break;
-                                                    
+                        break;          
                       }
                     }                 
                 }
             }
-            for(int i=0;i<5;i++)
+            for(int i=0;i<maxEnemy;i++)
             {
                 if(enemies[i].HP>0)
                 {
@@ -116,23 +126,52 @@ int main()
                 else 
                 {
                     deadEnemies++;
-                }
-                if(deadEnemies==sizeof(enemies)/sizeof(enemies[0]))
-                {
-                    gameState=2;
-                    firstFrame=0;
+                    
                 }
             }
+            printf("%d\n",deadEnemies);
+            if(deadEnemies>=sizeof(enemies)/sizeof(enemies[0]))
+            {
+                SaveNewScore(currentScore);
+                gameState=2;
+                firstFrame=0;
+                
+            }
+            if(frameSinceScoreUp>=ScoreUpCooldDown)
+            {
+              currentScore+=5;
+              frameSinceScoreUp=0;
+            }
+            else
+            {
+                frameSinceScoreUp++;
+            }
+            DrawText(TextFormat("score : %i",currentScore), 50,50, 15, WHITE);
             DrawBar(&newBar,playerRect,playerTex);
-            
-                 
        }
-        else if(gameState==2)//scoreBoard
-        {
-
-        }
-        EndDrawing(); 
-
+       else if(gameState==2)//scoreBoard
+       {
+           if(firstFrame==0)
+           {
+             for(int i =0;i<10;i++)
+             {
+                scores[i]=LoadStorageScore(i);
+             }
+             firstFrame++;
+           }
+           if(IsKeyDown(KEY_ENTER))
+            {
+                gameState=1;
+                firstFrame=0;
+            }
+            DrawText(TextFormat("0 : %i", scores[0]), 280, 130, 40, GREEN);
+            for(int i =1;i<10;i++)
+            {
+                DrawText(TextFormat("%d: %i",i, scores[i]), 280,130+35*i, 30, WHITE);
+            }
+            DrawText(TextFormat("Press enter to play again"),560,270, 30, WHITE);
+       }
+       EndDrawing(); 
     }
     CloseWindow();
     return 0;

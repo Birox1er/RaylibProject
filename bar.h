@@ -15,8 +15,8 @@ float posX;
     if(bar->posX<0){
         bar->posX=0;
     }
-    else if(bar->posX>760){
-        bar->posX=760;
+    else if(bar->posX>896){
+        bar->posX=896;
     }
 };
 struct Rectangle GetBarRectangle(){

@@ -1,6 +1,8 @@
 #ifndef ENEMY_H /* L'écriture ici présente n'est pas universelle */
 #define ENEMY_H
 #include <Raylib.h>
+#include <stdio.h>
+
 struct Enemy{
     int HP;
     int ID;
@@ -66,6 +68,7 @@ void LoseHP(struct Enemy *enemy)
     if(enemy->HP<=0)
     {
         enemy->isActive=0;
+        printf("IT DIED!!!");
     }
 }
     
